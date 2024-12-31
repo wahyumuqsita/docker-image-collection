@@ -1,0 +1,48 @@
+name: Publish Docker images
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build_and_push:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Parse release tag
+        id: parse_tag
+        run: |
+          # Extract directory and version from the release tag
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+          if [[ "$RELEASE_TAG" =~ ^(.+)-v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            DIR="${BASH_REMATCH[1]}"
+            VERSION="${BASH_REMATCH[2]}"
+            echo "Directory: $DIR"
+            echo "Version: $VERSION"
+            echo "dir=$DIR" >> $GITHUB_ENV
+            echo "version=$VERSION" >> $GITHUB_ENV
+          else
+            echo "Invalid release tag format. Expected: directory-vX.Y.Z"
+            exit 1
+          fi
+
+      - name: Build and push Docker image
+        run: |
+          echo "Building Docker image for directory: ${{ env.dir }} with version: ${{ env.version }}"
+          docker buildx build \
+            --push \
+            --tag "wahyumw/${{ env.dir }}:${{ env.version }}" \
+            ${{ env.dir }}
