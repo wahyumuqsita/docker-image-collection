@@ -1,4 +1,4 @@
-FROM docker:debian:bullseye-slim
+FROM debian:bullseye-slim
 
 LABEL maintainer "Wahyu Muqsita Wardana <wahyu.muqsita@gmail.com>"
 
